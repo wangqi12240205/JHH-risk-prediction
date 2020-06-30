@@ -65,9 +65,9 @@ ma_infect = moving_average(by_month_mean$Infection_Count,3)
 plot(by_month_mean$month_cum, ma_infect,type="l",xlab = 'Month',  ylab = 'infection count',
      main = 'moving average of infection count')
 by_month_mean <- slide(by_month_mean, "HHCom", NewVar = "HHCom_Lag1", slideBy = -1)  # create lag1 variable
-by_month_mean <- slide(by_month_mean, "HHCom", NewVar = "HHCom_Lag2", slideBy = -2)  # create lag1 variable
+by_month_mean <- slide(by_month_mean, "month_cum", NewVar = "month_cum_Lag1", slideBy = -1)  # create lag1 variable
 
-fit <- lm(Infection_Count ~ HHCom + HHCom_Lag1 + HHCom_Lag2, data=by_month_mean)
+fit <- lm(Infection_Count ~ HHCom + HHCom_Lag1 + month_cum + month_cum_Lag1, data=by_month_mean)
 
 coefficients(fit) # model coefficients
 confint(fit, level=0.95) # CIs for model parameters
