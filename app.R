@@ -2,6 +2,7 @@
 library(shiny)
 setwd("/Users/wangqi/Desktop/Github/dashboard-Rshiny/")
 df <- read.csv("sample_data.csv")
+
 ui <- fluidPage(
   headerPanel('Dashborad with R-shiny'),
   selectInput('selectedK', 'K Variable', unique(df$K)),
