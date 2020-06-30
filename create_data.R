@@ -3,6 +3,9 @@
 
 library(reshape2)
 library(TTR)
+library(dplyr)
+library(DataCombine)
+
 
 
 create_data_frame <- function() {
@@ -49,7 +52,29 @@ moving_average <- function(array,k){
   }
   return (temp)
 }
-ma_infect = moving_average(For_Evaluation$Infection_Count,3)
-plot(ma_infect,type="l",xlab = 'Index',  ylab = 'infection count',
-     main = 'moving average of infection count')
 
+by_month <- For_Evaluation %>% group_by(month_cum)
+by_month_mean <- by_month %>% summarise(
+  Infection_Count = mean(Infection_Count),
+  HHCom = mean(HHCom)
+)
+by_month_mean <- as.data.frame(by_month_mean)
+
+
+ma_infect = moving_average(by_month_mean$Infection_Count,3)
+plot(by_month_mean$month_cum, ma_infect,type="l",xlab = 'Month',  ylab = 'infection count',
+     main = 'moving average of infection count')
+by_month_mean <- slide(by_month_mean, "HHCom", NewVar = "HHCom_Lag1", slideBy = -1)  # create lag1 variable
+by_month_mean <- slide(by_month_mean, "HHCom", NewVar = "HHCom_Lag2", slideBy = -2)  # create lag1 variable
+
+fit <- lm(Infection_Count ~ HHCom + HHCom_Lag1 + HHCom_Lag2, data=by_month_mean)
+
+coefficients(fit) # model coefficients
+confint(fit, level=0.95) # CIs for model parameters
+fitted(fit) # predicted values
+residuals(fit) # residuals
+anova(fit) # anova table
+vcov(fit) # covariance matrix for model parameters
+
+layout(matrix(c(1,2,3,4),2,2)) # optional 4 graphs/page
+plot(fit)
