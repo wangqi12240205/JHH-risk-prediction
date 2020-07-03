@@ -14,6 +14,9 @@ create_data_frame <- function() {
   Corr <- 0.5
   Max_sample <- 3
   R_sample <- integer(48)
+  Hocount_sample <- integer(48)
+  LengthOfStay  <- integer(48)
+  AvgCleaning <-  integer(48)
   Units <- paste(letters[1:12])
   
   writeLines('\nUnits:')
@@ -28,12 +31,20 @@ create_data_frame <- function() {
       } else {
         R_sample[j] = round(R_sample[j-1] * Corr + R_sample_j * (1-Corr))
       }
+      Hocount_sample[j] = sample(R_sample[j] + 1, 1) - 1
+      LengthOfStay[j] = sample(10,1) - 1
+      AvgCleaning[j] = sample(5,1) - 1
     }
+    Hocount = R_sample
     For_Eval_i <- data.frame(
       month_cum = c(1:48),
       Infection_Count = R_sample,
+      HoCount = Hocount_sample,
+      NotHoCount = R_sample - Hocount_sample,
       UnitName =  Units[i],
       HHCom = runif(48,min = 0.8,max = 0.95),
+      LengthOfStay = LengthOfStay,
+      AvgCleaning = AvgCleaning,
       other =  "other",
       stringsAsFactors = FALSE
     )
@@ -64,10 +75,18 @@ by_month_mean <- as.data.frame(by_month_mean)
 ma_infect = moving_average(by_month_mean$Infection_Count,3)
 plot(by_month_mean$month_cum, ma_infect,type="l",xlab = 'Month',  ylab = 'infection count',
      main = 'moving average of infection count')
-by_month_mean <- slide(by_month_mean, "HHCom", NewVar = "HHCom_Lag1", slideBy = -1)  # create lag1 variable
-by_month_mean <- slide(by_month_mean, "month_cum", NewVar = "month_cum_Lag1", slideBy = -1)  # create lag1 variable
 
-fit <- lm(Infection_Count ~ HHCom + HHCom_Lag1 + month_cum + month_cum_Lag1, data=by_month_mean)
+
+For_Evaluation$Y = For_Evaluation$HoCount > 0
+For_Evaluation <- slide(For_Evaluation, Var = "Y", NewVar = "Y_Lag1", GroupVar = 'UnitName', slideBy = -1)  # create lag1 variable
+For_Evaluation <- slide(For_Evaluation, Var = "NotHoCount", NewVar = "NotHoCount_Lag1", GroupVar = 'UnitName', slideBy = -1)  # create lag1 variable
+For_Evaluation <- slide(For_Evaluation, Var = "LengthOfStay", NewVar = "LengthOfStay_Lag1", GroupVar = 'UnitName', slideBy = -1)  # create lag1 variable
+For_Evaluation <- slide(For_Evaluation, Var = "HHCom", NewVar = "HHCom_Lag1", GroupVar = 'UnitName', slideBy = -1)  # create lag1 variable
+For_Evaluation <- slide(For_Evaluation, Var = "AvgCleaning", NewVar = "AvgCleaning_Lag1", GroupVar = 'UnitName', slideBy = -1)  # create lag1 variable
+
+fit <- glm(Y ~ Y_Lag1 + NotHoCount_Lag1 + LengthOfStay_Lag1 + HHCom_Lag1 + AvgCleaning_Lag1, 
+           data=For_Evaluation,
+           , family=binomial(link="logit"))
 
 coefficients(fit) # model coefficients
 confint(fit, level=0.95) # CIs for model parameters
