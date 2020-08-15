@@ -64,7 +64,9 @@ process_data <- function(X_k, Y_k) {
       Xs = rbind(Xs, Xs_temp)
     }
   }
+  
   output = data.frame(T_start, T_end, T_diff, censored, Xs)
+  rownames(output) <- c()
   
   return(output)
 }
@@ -77,15 +79,18 @@ n_units = length(unit_name);
 
 # Run for each unit
 res.cox_each <- vector(mode = "list", length = length(unit_name))
+dp <- vector(mode = "list", length = length(unit_name))
 dp_all = data.frame()
+betas = c()
 for (k in 1:length(unit_name)) {
   index = (Tbl$UnitName == unit_name[k]);
   Y_k = Tbl$HoCount[index];
   X_k = X_Tbl[index,];
-  dp = process_data(X_k, Y_k);
-  dp_all = rbind(dp_all, dp);
+  dp[[k]] = process_data(X_k, Y_k);
+  dp_all = rbind(dp_all, dp[[k]]);
   cat(sprintf("\n***** UNIT %s *****\n",unit_name[k]))
-  res.cox_each[[k]] <- coxph(Surv(T_diff, censored) ~ X1 + X2 + X3, data =dp)
+  res.cox_each[[k]] <- coxph(Surv(T_diff, censored) ~ X1 + X2 + X3, data =dp[[k]])
+  betas = rbind(betas, res.cox_each[[k]]$coefficients) 
 }
 res.cox_all <- coxph(Surv(T_diff, censored) ~ X1 + X2 + X3, data = dp_all)
 par(mfrow=c(1,1))
@@ -94,8 +99,7 @@ plot(survfit(res.cox_all), ylim=c(0, 1), xlab="Days",
 
 par(mfrow=c(3,4))    # set the plotting area into a 3*4 array
 for (k in 1:length(unit_name)) {
-  plot(survfit(res.cox_each[[k]]), ylim=c(0, 1), xlim = c(0,20), xlab="Days",
-       ylab="Survival Probability", main = sprintf("Unit %s",unit_name[k]))
+  plot(survfit(res.cox_each[[k]]), ylim=c(0, 1), xlim = c(0,20),
+       main = sprintf("Unit %s",unit_name[k]))
 }
-
 
