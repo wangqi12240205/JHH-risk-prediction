@@ -95,11 +95,12 @@ for (k in 1:length(unit_name)) {
 res.cox_all <- coxph(Surv(T_diff, censored) ~ X1 + X2 + X3, data = dp_all)
 par(mfrow=c(1,1))
 plot(survfit(res.cox_all), ylim=c(0, 1), xlab="Days",
-     ylab="Survival Probability", main = "All Units")
+     ylab="Survival Probability", main = "All Units",
+     conf.int = FALSE)
 
 par(mfrow=c(3,4))    # set the plotting area into a 3*4 array
 for (k in 1:length(unit_name)) {
   plot(survfit(res.cox_each[[k]]), ylim=c(0, 1), xlim = c(0,20),
-       main = sprintf("Unit %s",unit_name[k]))
+       main = sprintf("Unit %s",unit_name[k]), conf.int = FALSE)
 }
 
